@@ -46,7 +46,7 @@ uint64_t getTimestamp (void){
     all = (uint64_t) sec * BILLION + (uint64_t) ns;
    
 
-    printf("Current time: %" PRIu64  " nanoseconds since the Epoch\n", all);
+    printf("tse decimal: %" PRIu64  " nanoseconds since the Epoch\n", all);
     return all;
 }
 
@@ -79,15 +79,8 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         
         THROW_IF_TRUE(payload == nullptr, "Issue while payload.");
         uint64_t tsi = getTimestamp();
-        if (payloadLen>0){
-            char *temp_pointer = (static_cast<char *>(payload));
-            int byte_count = 0;
-            while (byte_count++ < 44) {
-            printf("%x", *temp_pointer);
-            temp_pointer++;
-        }
-        printf("\n");
-        }
+     
+     
         char ts[15];
         sprintf(ts, "%lx", tsi);
         
@@ -115,47 +108,44 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         for (size_t i =0; i<sizeof(bytes);++i){
             sprintf("%02x", bytes[i]);
         }*/
-
-        char hextsi [20];
-        for (int x = 9; x<17;x++){
-            char temp[3] = {(static_cast<char *>(payload))[x]};
-            strncat(hextsi, temp,3);
-        }
-
+        unsigned char messageId = (*(static_cast<char *>(payload))&0x0F);
+        printf("messageId: %x\n",messageId);
+        if (messageId == 0 || messageId == 8){
+        char hextsi [18] = "";
+        //unsigned char bytestsi[8];
+        //sscanf(static_cast<char *>(payload)+8, "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx", &bytestsi[0], &bytestsi[1], &bytestsi[2], &bytestsi[3], &bytestsi[4], &bytestsi[5], &bytestsi[6], &bytestsi[7]);
+        for (int x = 8; x<16;x++){
+                long tmpbyte = ((static_cast<char *>(payload))[x])&0xFF;
+                char tmphexbyte[3];
+                sprintf(tmphexbyte, "%02lx", tmpbyte);
+                printf("hex byte: %s\n", tmphexbyte);
+                strcat(hextsi, tmphexbyte);
+            }
+        printf("hextsi: %s\n",hextsi);
         long decimaltsi = strtol(hextsi, NULL, 16);
+        printf("tsi decimal: %ld\n", decimaltsi);
         long decimaltse = getTimestamp() - decimaltsi;
+        long absdecimaltse = abs(decimaltse);
+        printf("tse decimal: %ld\n", absdecimaltse);
         char hextse[15];
-        sprintf(hextse, "%lx", decimaltse);
+        sprintf(hextse, "%lx", absdecimaltse);
+        printf("hextse: %s", hextse);
+        for (int x = 8; x<16; x++){
+            (static_cast<char *>(payload))[x] = 0;
+        }
         for (unsigned int i = 1; i < strlen(hextse); i+=2) {
             char tmp[3] = {hextse[strlen(hextse)-i-1], hextse[strlen(hextse)-i],'\0'};
             long decimal = strtol(tmp, NULL, 16);
-            printf("decimal: %ld", decimal);
-            (static_cast<char *>(payload))[15-int(round(i/2))] = decimal;
+            //printf("decimal: %ld", decimal);
+            (static_cast<char *>(payload))[13-int(round(i/2))] = decimal;
             
             //printf("payload value: %s\n",(static_cast<char *>(payload))[19-i]);
         }
         putchar('\n');
+        }
         printf("Payload length: %d\n", payloadLen);
-        unsigned char messageId = (*(static_cast<char *>(payload))&0x0F);
-        printf("messageId: %x\n",messageId);
+
         
-        for (unsigned int i = 0; i < 6; ++i) {
-            //char tmp = (static_cast<char *>(payload))[i];
-            
-            //ptp[15-i] = ts[6-i];
-           
-        }
-        
-         //printf("final packet: %s\n", (static_cast<char *>(payload)));
-        if(messageId == 0){
-        /*unsigned char correctionField = (*((static_cast<char *>(payload)) + 8)& 0xFFFFFFFFFFFFFFFF);
-        printf("correction value: %x\n",correctionField);
-       
-        
-        sprintf((*((static_cast<char *>(payload)) + 8)& 0xFFFFFFFFFFFFFFFF),"%lx", ts);
-        unsigned char pointer = *(static_cast<char *>(payload));
-        printf("new payload: %x", pointer);*/
-        }
         nfq_udp_compute_checksum_ipv4(udp, ip);
         return nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, pktb_len(pkBuff), pktb_data(pkBuff));
     }
