@@ -128,7 +128,7 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         long absdecimaltse = abs(decimaltse);
         printf("tse decimal: %ld\n", absdecimaltse);
         char hextse[15];
-        sprintf(hextse, "%lx", absdecimaltse);
+        sprintf(hextse, "%08lx", absdecimaltse);
         printf("hextse: %s", hextse);
         for (int x = 8; x<16; x++){
             (static_cast<char *>(payload))[x] = 0;
