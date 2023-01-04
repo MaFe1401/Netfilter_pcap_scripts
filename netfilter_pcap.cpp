@@ -115,6 +115,9 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
         for (size_t i =0; i<sizeof(bytes);++i){
             sprintf("%02x", bytes[i]);
         }*/
+        unsigned char messageId = (*(static_cast<char *>(payload))&0x0F);
+        printf("messageId: %x\n",messageId);
+        if (messageId == 0 || messageId == 8){
         for (unsigned int i = 1; i < strlen(ts); i+=2) {
             char tmp[3] = {ts[strlen(ts)-i-1], ts[strlen(ts)-i],'\0'};
             long decimal = strtol(tmp, NULL, 16);
@@ -124,27 +127,10 @@ static int netfilterCallback(struct nfq_q_handle *queue, struct nfgenmsg *nfmsg,
             //printf("payload value: %s\n",(static_cast<char *>(payload))[19-i]);
         }
         putchar('\n');
+        }
         printf("Payload length: %d\n", payloadLen);
-        unsigned char messageId = (*(static_cast<char *>(payload))&0x0F);
-        printf("messageId: %x\n",messageId);
-        
-        for (unsigned int i = 0; i < 6; ++i) {
-            //char tmp = (static_cast<char *>(payload))[i];
-            
-            //ptp[15-i] = ts[6-i];
-           
-        }
-        
-         //printf("final packet: %s\n", (static_cast<char *>(payload)));
-        if(messageId == 0){
-        /*unsigned char correctionField = (*((static_cast<char *>(payload)) + 8)& 0xFFFFFFFFFFFFFFFF);
-        printf("correction value: %x\n",correctionField);
-       
-        
-        sprintf((*((static_cast<char *>(payload)) + 8)& 0xFFFFFFFFFFFFFFFF),"%lx", ts);
-        unsigned char pointer = *(static_cast<char *>(payload));
-        printf("new payload: %x", pointer);*/
-        }
+
+
         nfq_udp_compute_checksum_ipv4(udp, ip);
         return nfq_set_verdict(queue, ntohl(ph->packet_id), NF_ACCEPT, pktb_len(pkBuff), pktb_data(pkBuff));
     }
